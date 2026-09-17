@@ -88,7 +88,7 @@ int main()
 
     //准备一个epoll_event
     epoll_event event{};
-    event.events = EPOLLIN;//关心这个 fd 有没有“可读事件”
+    event.events = EPOLLIN | EPOLLET;//关心这个 fd 有没有“可读事件”
     event.data.fd = listen_fd;//这个事件对应的是 listen_fd
 
     //EPOLL_CTL_ADD:把一个 fd 加入 epoll 的监视名单
@@ -199,7 +199,7 @@ int main()
                             nullptr
                         );
                         close(temp_fd);
-                        client_buffers.erase(client_fd); // 清理缓冲区，防止内存泄漏
+                        client_buffers.erase(temp_fd); // 清理缓冲区，防止内存泄漏
                         break;
                     }
 
@@ -274,35 +274,38 @@ int main()
                     client_buffers.erase(temp_fd);                                      
                 }
                 //文件打开了
-                std::stringstream ss;
-                ss << file.rdbuf();
-                std::string body = ss.str();
+                else
+                {
+                    std::stringstream ss;
+                    ss << file.rdbuf();
+                    std::string body = ss.str();
 
-                std::string response;
+                    std::string response;
 
-                response += "HTTP/1.1 200 OK\r\n";
-                response += "Content-Type: text/html\r\n";
-                response += "Content-Length: ";
-                response += std::to_string(body.size());
-                response += "\r\n";
-                response += "\r\n";
-                response += body;
+                    response += "HTTP/1.1 200 OK\r\n";
+                    response += "Content-Type: text/html\r\n";
+                    response += "Content-Length: ";
+                    response += std::to_string(body.size());
+                    response += "\r\n";
+                    response += "\r\n";
+                    response += body;
 
-                send(temp_fd,
-                    response.c_str(),
-                    response.size(),
-                    0
-                );
-                close(temp_fd);
+                    send(temp_fd,
+                        response.c_str(),
+                        response.size(),
+                        0
+                    );
+                    close(temp_fd);
 
-                epoll_ctl(
-                    epoll_fd,
-                    EPOLL_CTL_DEL,
-                    temp_fd,
-                    nullptr
-                );
+                    epoll_ctl(
+                        epoll_fd,
+                        EPOLL_CTL_DEL,
+                        temp_fd,
+                        nullptr
+                    );
 
-                client_buffers.erase(temp_fd);
+                    client_buffers.erase(temp_fd);
+                }
             }            
         }
     }       
