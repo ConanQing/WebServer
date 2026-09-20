@@ -21,6 +21,7 @@ private:
 
     void handleRead(int fd);
 
+    void handleWrite(int fd);
 
 private:
     int port_;
@@ -28,6 +29,8 @@ private:
     int epoll_fd_;
 
     std::unordered_map<int, std::string> buffers_;
+    std::unordered_map<int, std::string> write_buffers_;
+    std::unordered_map<int, bool> keep_alive_;
 };
 
 #endif

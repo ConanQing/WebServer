@@ -1,6 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello Page</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 80px auto;
+            text-align: center;
+            background: #f0f9ff;
+            color: #333;
+        }
+        .card {
+            background: #fff;
+            padding: 48px 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #0ea5e9;
+            font-size: 52px;
+            margin: 0 0 16px;
+        }
+        .desc {
+            color: #666;
+            margin-bottom: 24px;
+        }
+        .back {
+            color: #0ea5e9;
+            text-decoration: none;
+        }
+        .back:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
 <body>
-    <h1>Hello from hello.html</h1>
+    <div class="card">
+        <h1>Hello!</h1>
+        <p class="desc">静态文件服务正常运行 ✅</p>
+        <a class="back" href="/index.html">← 返回首页</a>
+    </div>
 </body>
 </html>

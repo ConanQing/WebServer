@@ -1,11 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>ConanWebServer</title>
+    <title>首页 - WebServer</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 80px auto;
+            text-align: center;
+            background: #f5f7fa;
+            color: #333;
+        }
+        .card {
+            background: #fff;
+            padding: 48px 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #2c3e50;
+            margin: 0 0 16px;
+        }
+        .desc {
+            color: #666;
+            margin-bottom: 32px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 28px;
+            background: #3498db;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+    </style>
 </head>
 <body>
-    <h1>Hello Conan!</h1>
-    <p>This is my C++ WebServer.</p>
+    <div class="card">
+        <h1>欢迎来到 WebServer</h1>
+        <p class="desc">这是 C++ 手写 HTTP 服务器的默认首页</p>
+        <a class="btn" href="/hello.html">前往 Hello 测试页</a>
+    </div>
 </body>
 </html>

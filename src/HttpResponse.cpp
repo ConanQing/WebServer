@@ -26,7 +26,7 @@ std::string HttpResponse::toString() const
     response += "Content-Length: ";
     response += std::to_string(body_.size());
     response += "\r\n";
-
+    response += "Connection: keep-alive\r\n";
     response += "\r\n";
 
     response += body_;

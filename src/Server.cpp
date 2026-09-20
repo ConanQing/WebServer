@@ -296,85 +296,125 @@ void Server::handleRead(int fd)
             buffers_.erase(fd);
 
             return;
+        }
+    }
 
+    while(true)
+    {
+        size_t pos = buffers_[fd].find("\r\n\r\n");
+        //判断还有没有完整请求
+        if(pos == std::string::npos)
+        {
+            break;
+        }
+        //算当前这个完整请求的长度
+        size_t request_length = pos + 4;
+        //截取这一个完整请求
+        std::string full_request = buffers_[fd].substr(0, request_length);
+        //把这一段从缓冲区里删掉
+        buffers_[fd].erase(0, request_length);
+
+        //解析请求
+        HttpRequest request;
+        if (!request.parse(full_request))
+        {
+            close(fd);
+            buffers_.erase(fd);
+            return;
+        }
+        std::cout << "method: "
+          << request.method()
+          << std::endl;
+
+        std::string path = request.path();
+        if (path == "/")
+        {
+            path = "/index.html";
         }
 
+        std::string file_path = "www" + path;
+        std::ifstream file(file_path);
+        HttpResponse response;
+
+        if (!file.is_open())
+        {
+            response.setStatus(404, "Not Found");
+            response.setBody("<h1>404 Not Found</h1>");
+        }
+        else
+        {
+            std::stringstream ss;
+            ss << file.rdbuf();
+            std::string body = ss.str();
+            response.setStatus(200, "OK");
+            response.setBody(body);
+        }
+
+        // 7. 发送响应
+        std::string response_data = response.toString();
+        send(fd, response_data.c_str(), response_data.size(), 0);
     }
+}
 
-    // HTTP完整判断
-    if(buffers_[fd].find("\r\n\r\n")
-        == std::string::npos)
+void Server::handleWrite(int fd)
+{
+    std::string& buffer = write_buffers_[fd];
+
+    while (!buffer.empty())
     {
-        return;
-    }
-
-    HttpRequest request;
-
-    if (!request.parse(buffers_[fd]))
-    {
-        close(fd);
-        buffers_.erase(fd);
-        return;
-    }      
-
-    std::string path = request.path();
-    if(path == "/")
-    {
-        path="/index.html";
-    }
-
-    std::string body;
-
-    std::string file_path = "www" + path;
-    std::ifstream file(file_path);
-
-    HttpResponse response;
-
-    if (!file.is_open())
-    {
-        response.setStatus(
-            404,
-            "Not Found"
+        ssize_t n = send(
+            fd,
+            buffer.data(),
+            buffer.size(),
+            0
         );
 
-        response.setBody(
-            "<h1>404 Not Found</h1>"
-        );
+        if (n > 0)
+        {
+            buffer.erase(0, n);
+        }
+        else if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+        {
+            break;
+        }
+        else
+        {
+            close(fd);
+            buffers_.erase(fd);
+            write_buffers_.erase(fd);
+            return;
+        }
     }
-    else
+
+    if (buffer.empty())
     {
-        std::stringstream ss;
+        if(keep_alive_[fd])
+        {
+            epoll_event event{};
+            event.events = EPOLLIN | EPOLLET;
+            event.data.fd = fd;
 
-        ss << file.rdbuf();
+            epoll_ctl(
+                epoll_fd_,
+                EPOLL_CTL_MOD,
+                fd,
+                &event
+            );
+        }
+        else
+        {
+            epoll_ctl(
+            epoll_fd_,
+            EPOLL_CTL_DEL,
+            fd,
+            nullptr
+            );
 
-        std::string body = ss.str();
+            close(fd);
 
-        response.setStatus(
-            200,
-            "OK"
-        );
-
-        response.setBody(body);
+            buffers_.erase(fd);
+            write_buffers_.erase(fd);
+            keep_alive_.erase(fd);
+        }
     }
-
-    std::string response_data =
-        response.toString();
-
-    send(
-        fd,
-        response_data.c_str(),
-        response_data.size(),
-        0
-    );
-
-    close(fd);
-
-    epoll_ctl(
-        epoll_fd_,
-        EPOLL_CTL_DEL,
-        fd,
-        nullptr
-    );
-
-    buffers_.erase(fd);
 }
