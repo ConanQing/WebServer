@@ -1,10 +1,8 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-
 #include <string>
 #include <unordered_map>
-
 
 class Server
 {
@@ -25,16 +23,11 @@ private:
 
 
 private:
-
     int port_;
-
     int listen_fd_;
-
     int epoll_fd_;
-
 
     std::unordered_map<int, std::string> buffers_;
 };
-
 
 #endif

@@ -1,16 +1,15 @@
 #include "Server.h"
-
+#include "HttpRequest.h"
+#include "HttpResponse.h"
 
 #include <iostream>
 #include <cstring>
 #include <fstream>
 #include <sstream>
 
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -50,9 +49,7 @@ void Server::setNonBlocking(int fd)
 
 void Server::start()
 {
-
     // socket
-
     listen_fd_ = socket(
         AF_INET,
         SOCK_STREAM,
@@ -173,10 +170,7 @@ void Server::start()
         for(int i = 0; i < n; i++)
         {
 
-            int fd =
-                events[i].data.fd;
-
-
+            int fd = events[i].data.fd;
 
             if(fd == listen_fd_)
             {
@@ -186,18 +180,9 @@ void Server::start()
             {
                 handleRead(fd);
             }
-
         }
-
     }
-
 }
-
-
-
-
-
-
 
 void Server::handleAccept()
 {
@@ -210,16 +195,12 @@ void Server::handleAccept()
         socklen_t len =
             sizeof(client_addr);
 
-
-
         int client_fd =
             accept(
                 listen_fd_,
                 (sockaddr*)&client_addr,
                 &len
             );
-
-
 
         if(client_fd == -1)
         {
@@ -235,8 +216,6 @@ void Server::handleAccept()
             break;
 
         }
-
-
 
         setNonBlocking(
             client_fd
@@ -267,29 +246,17 @@ void Server::handleAccept()
             &event
         );
 
-
-
         std::cout
             << "new client: "
             << client_fd
             << std::endl;
-
     }
 
 }
 
-
-
-
-
-
-
 void Server::handleRead(int fd)
 {
-
     char buffer[4096];
-
-
     while(true)
     {
 
@@ -301,33 +268,22 @@ void Server::handleRead(int fd)
                 0
             );
 
-
         if(n > 0)
         {
-
             buffers_[fd].append(
                 buffer,
                 n
             );
-
         }
-
 
         else if(n == 0)
         {
-
             close(fd);
-
             buffers_.erase(fd);
-
             return;
-
         }
-
-
         else
         {
-
             if(errno == EAGAIN ||
                errno == EWOULDBLOCK)
             {
@@ -345,29 +301,23 @@ void Server::handleRead(int fd)
 
     }
 
-
-
-
     // HTTP完整判断
-
     if(buffers_[fd].find("\r\n\r\n")
         == std::string::npos)
     {
         return;
     }
 
+    HttpRequest request;
 
+    if (!request.parse(buffers_[fd]))
+    {
+        close(fd);
+        buffers_.erase(fd);
+        return;
+    }      
 
-
-    std::istringstream iss(buffers_[fd]);
-
-    std::string method;
-    std::string path;
-    std::string version;
-    iss >> method
-        >> path
-        >> version;
-
+    std::string path = request.path();
     if(path == "/")
     {
         path="/index.html";
@@ -378,49 +328,42 @@ void Server::handleRead(int fd)
     std::string file_path = "www" + path;
     std::ifstream file(file_path);
 
-    std::string response;
+    HttpResponse response;
 
-    if(!file.is_open())
+    if (!file.is_open())
     {
+        response.setStatus(
+            404,
+            "Not Found"
+        );
 
-        body =
-        "<h1>404 Not Found</h1>";
-        response +=
-        "HTTP/1.1 404 Not Found\r\n";
-
+        response.setBody(
+            "<h1>404 Not Found</h1>"
+        );
     }
-
     else
     {
         std::stringstream ss;
-        ss << file.rdbuf();
-        body =
-            ss.str();
 
-        response +=
-        "HTTP/1.1 200 OK\r\n";
+        ss << file.rdbuf();
+
+        std::string body = ss.str();
+
+        response.setStatus(
+            200,
+            "OK"
+        );
+
+        response.setBody(body);
     }
 
-    response +=
-    "Content-Type: text/html\r\n";
-
-    response +=
-    "Content-Length: ";
-
-    response +=
-    std::to_string(
-        body.size()
-    );
-
-    response +=
-    "\r\n\r\n";
-
-    response += body;
+    std::string response_data =
+        response.toString();
 
     send(
         fd,
-        response.c_str(),
-        response.size(),
+        response_data.c_str(),
+        response_data.size(),
         0
     );
 
