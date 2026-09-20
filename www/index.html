@@ -1,49 +1,181 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>首页 - WebServer</title>
-    <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            max-width: 600px;
-            margin: 80px auto;
-            text-align: center;
-            background: #f5f7fa;
-            color: #333;
-        }
-        .card {
-            background: #fff;
-            padding: 48px 32px;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        }
-        h1 {
-            color: #2c3e50;
-            margin: 0 0 16px;
-        }
-        .desc {
-            color: #666;
-            margin-bottom: 32px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 28px;
-            background: #3498db;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 6px;
-        }
-        .btn:hover {
-            background: #2980b9;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ConanWebServer — C++ 高并发 HTTP 服务器</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --blue: #58a6ff;
+  --green: #3fb950;
+  --purple: #bc8cff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+.wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+.hero {
+  text-align: center;
+  padding: 84px 0 56px;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(88,166,255,.18), transparent);
+  border-bottom: 1px solid var(--border);
+}
+.hero h1 {
+  font-size: 54px;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, var(--blue), var(--purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero p { color: var(--muted); margin-top: 14px; font-size: 17px; }
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--card);
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+.badges {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  justify-content: center; margin-top: 26px;
+}
+.badge {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--blue);
+  background: rgba(88,166,255,.08);
+}
+
+.section { padding: 54px 0 6px; }
+.section h2 { font-size: 22px; margin-bottom: 18px; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+.feature {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.feature .num {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+  color: var(--purple);
+}
+.feature h3 { font-size: 15px; margin: 10px 0 6px; }
+.feature p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+.links { display: flex; flex-wrap: wrap; gap: 12px; }
+.link {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  background: var(--card);
+  transition: border-color .15s;
+}
+.link:hover { border-color: var(--blue); }
+.link code {
+  font-family: ui-monospace, Consolas, monospace;
+  color: var(--blue); font-size: 13px;
+}
+
+footer {
+  margin-top: 72px;
+  padding: 28px 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+</style>
 </head>
 <body>
-    <div class="card">
-        <h1>欢迎来到 WebServer</h1>
-        <p class="desc">这是 C++ 手写 HTTP 服务器的默认首页</p>
-        <a class="btn" href="/hello.html">前往 Hello 测试页</a>
+
+<div class="hero">
+  <h1>ConanWebServer</h1>
+  <p>用 C++ 从零手写的高并发 HTTP 服务器</p>
+  <div class="status"><span class="dot"></span>服务器运行中 · Linux · 端口 8080</div>
+  <div class="badges">
+    <span class="badge">C++17</span>
+    <span class="badge">epoll</span>
+    <span class="badge">Edge-Triggered</span>
+    <span class="badge">Non-blocking I/O</span>
+    <span class="badge">Keep-Alive</span>
+    <span class="badge">CMake</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="section">
+    <h2>核心特性</h2>
+    <div class="grid">
+      <div class="feature">
+        <div class="num">01</div>
+        <h3>epoll + ET</h3>
+        <p>事件驱动，单线程监听海量连接；边缘触发配合非阻塞 I/O，事件不丢、不轮询</p>
+      </div>
+      <div class="feature">
+        <div class="num">02</div>
+        <h3>Keep-Alive</h3>
+        <p>长连接复用：一次握手服务多个请求，响应头如实告知客户端连接去向</p>
+      </div>
+      <div class="feature">
+        <div class="num">03</div>
+        <h3>非阻塞收发</h3>
+        <p>每个连接配独立读写缓冲，send / recv 循环到底，20MB 文件分毫不差</p>
+      </div>
+      <div class="feature">
+        <div class="num">04</div>
+        <h3>静态文件服务</h3>
+        <p>按请求路径返回 www/ 下的文件，路径不存在时返回 404 兜底页</p>
+      </div>
     </div>
+  </div>
+
+  <div class="section">
+    <h2>试试这些</h2>
+    <div class="links">
+      <a class="link" href="/hello.html"><code>/hello.html</code>&nbsp; 静态路由</a>
+      <a class="link" href="/not-exist.html"><code>/not-exist.html</code>&nbsp; 404 兜底</a>
+      <a class="link" href="/"><code>/</code>&nbsp; 回到首页</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  ConanWebServer · 从 socket 到 Reactor，一行一行亲手写成 · 2026
+</footer>
+
 </body>
 </html>

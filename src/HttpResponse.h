@@ -13,12 +13,15 @@ public:
     //拼成完整 HTTP 响应
     std::string toString() const;
 
+    void setKeepAlive(bool keep_alive);
 private:
     int status_code_;
 
     std::string status_;
 
     std::string body_;
+
+    bool keep_alive_ = true;
 };
 
 #endif

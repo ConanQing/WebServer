@@ -1,46 +1,100 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>Hello Page</title>
-    <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            max-width: 600px;
-            margin: 80px auto;
-            text-align: center;
-            background: #f0f9ff;
-            color: #333;
-        }
-        .card {
-            background: #fff;
-            padding: 48px 32px;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        }
-        h1 {
-            color: #0ea5e9;
-            font-size: 52px;
-            margin: 0 0 16px;
-        }
-        .desc {
-            color: #666;
-            margin-bottom: 24px;
-        }
-        .back {
-            color: #0ea5e9;
-            text-decoration: none;
-        }
-        .back:hover {
-            text-decoration: underline;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hello — ConanWebServer</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --blue: #58a6ff;
+  --green: #3fb950;
+  --purple: #bc8cff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 56px 40px;
+  text-align: center;
+}
+.chip {
+  display: inline-block;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+  color: var(--purple);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  background: rgba(188,140,255,.08);
+  margin-bottom: 28px;
+}
+h1 {
+  font-size: 58px;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, var(--green), var(--blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.desc {
+  color: var(--muted);
+  margin: 18px 0 30px;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.meta {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px dashed var(--border);
+  padding-top: 20px;
+  margin-bottom: 28px;
+}
+.meta b { color: var(--green); font-weight: 500; }
+.back {
+  display: inline-block;
+  padding: 10px 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  transition: border-color .15s;
+}
+.back:hover { border-color: var(--blue); }
+</style>
 </head>
 <body>
-    <div class="card">
-        <h1>Hello!</h1>
-        <p class="desc">静态文件服务正常运行 ✅</p>
-        <a class="back" href="/index.html">← 返回首页</a>
-    </div>
+
+<div class="card">
+  <div class="chip">GET /hello.html</div>
+  <h1>Hello!</h1>
+  <p class="desc">
+    静态路由正常工作。<br>
+    你看到的这些字，来自一个 C++ 服务器<br>
+    从磁盘读出、经 epoll 写缓冲、一字不差发到这里。
+  </p>
+  <div class="meta"><b>200 OK</b> · Content-Type: text/html · Keep-Alive</div>
+  <a class="back" href="/">返回首页</a>
+</div>
+
 </body>
 </html>

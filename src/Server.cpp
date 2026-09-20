@@ -169,12 +169,14 @@ void Server::start()
 
         for(int i = 0; i < n; i++)
         {
-
             int fd = events[i].data.fd;
-
             if(fd == listen_fd_)
             {
                 handleAccept();
+            }
+            else if(events[i].events & EPOLLOUT)
+            {
+                handleWrite(fd);
             }
             else
             {
@@ -349,11 +351,21 @@ void Server::handleRead(int fd)
             response.setStatus(200, "OK");
             response.setBody(body);
         }
-
-        // 7. 发送响应
+        //把客户端的意愿传给响应
+        response.setKeepAlive(request.keepAlive());
+        //进写缓冲，不急着发
         std::string response_data = response.toString();
-        send(fd, response_data.c_str(), response_data.size(), 0);
+        write_buffers_[fd] += response_data;
+        keep_alive_[fd] = request.keepAlive();
     }
+    if (!write_buffers_[fd].empty())
+    {
+        epoll_event ev{};
+        ev.events   = EPOLLOUT | EPOLLET;
+        ev.data.fd  = fd;
+        epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+    }    
+
 }
 
 void Server::handleWrite(int fd)
@@ -400,6 +412,8 @@ void Server::handleWrite(int fd)
                 fd,
                 &event
             );
+
+            write_buffers_.erase(fd);
         }
         else
         {

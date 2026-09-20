@@ -11,6 +11,11 @@ void HttpResponse::setBody(const std::string& body)
     body_ = body;
 }
 
+void HttpResponse::setKeepAlive(bool keep_alive)
+{
+    keep_alive_ = keep_alive;
+}
+
 std::string HttpResponse::toString() const
 {
     std::string response;
@@ -26,7 +31,16 @@ std::string HttpResponse::toString() const
     response += "Content-Length: ";
     response += std::to_string(body_.size());
     response += "\r\n";
-    response += "Connection: keep-alive\r\n";
+    // 原来：response += "Connection: keep-alive\r\n";
+    if (keep_alive_)
+    {
+        response += "Connection: keep-alive\r\n";
+    }
+    else
+    {
+        response += "Connection: close\r\n";
+    }
+    
     response += "\r\n";
 
     response += body_;
