@@ -13,6 +13,7 @@ public:
     const std::string& path() const;
     const std::string& version() const;
     const std::string& getHeader(const std::string& key) const;
+    const std::string& body() const;
 
     bool keepAlive() const;
 
@@ -20,6 +21,7 @@ private:
     std::string method_;
     std::string path_;
     std::string version_;
+    std::string body_;
 
     bool keep_alive_;
     

@@ -8,6 +8,7 @@ bool HttpRequest::parse(const std::string& request)
     path_.clear();
     version_.clear();
     headers_.clear();
+    body_.clear();
 
     keep_alive_ = true;
 
@@ -81,6 +82,23 @@ bool HttpRequest::parse(const std::string& request)
         start = end + 2;
     }
 
+    auto it_len = headers_.find("Content-Length");
+
+    if (it_len != headers_.end())
+    {
+        size_t length = std::stoul(it_len->second);
+        size_t body_start = request.find("\r\n\r\n");
+
+        if (body_start != std::string::npos)
+        {
+            body_start += 4;
+            if (request.size() >= body_start + length)
+            {
+                body_ = request.substr(body_start,length);
+            }
+        }
+    }    
+
     // 根据 Connection Header 判断是否保持连接
     auto it = headers_.find("Connection");
 
@@ -108,6 +126,11 @@ const std::string& HttpRequest::path() const
 const std::string& HttpRequest::version() const
 {
     return version_;
+}
+
+const std::string& HttpRequest::body() const
+{
+    return body_;
 }
 
 bool HttpRequest::keepAlive() const

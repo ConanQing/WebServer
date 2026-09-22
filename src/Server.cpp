@@ -1,6 +1,7 @@
 #include "Server.h"
 #include "HttpRequest.h"
 #include "HttpResponse.h"
+#include "Router.h"
 
 #include <iostream>
 #include <cstring>
@@ -15,7 +16,8 @@
 #include <netinet/in.h>
 #include <sys/epoll.h>
 
-
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 Server::Server(int port)
     :
@@ -310,7 +312,34 @@ void Server::handleRead(int fd)
             break;
         }
         //算当前这个完整请求的长度
-        size_t request_length = pos + 4;
+        size_t header_length = pos + 4;
+         // 先把头部单独切出来
+        std::string head = buffers_[fd].substr(0, header_length);
+
+        //找有没有body
+        size_t body_len = 0;
+        size_t cl_pos = head.find("Content-Length:");
+        if (cl_pos != std::string::npos)
+        {
+        try
+        {
+            body_len = std::stoul(head.substr(cl_pos + 15));// ← 出事点
+        }
+        catch (...)
+        {
+            close(fd);              // 关连接
+            buffers_.erase(fd);     // 清缓冲区
+            return;                 // 结束 handleRead
+        }
+
+        }
+
+        size_t request_length = header_length + body_len;
+
+        if (buffers_[fd].size() < request_length)
+        {
+            break;
+        }
         //截取这一个完整请求
         std::string full_request = buffers_[fd].substr(0, request_length);
         //把这一段从缓冲区里删掉
@@ -324,48 +353,25 @@ void Server::handleRead(int fd)
             buffers_.erase(fd);
             return;
         }
-        std::cout << "method: "
-          << request.method()
-          << std::endl;
-
-        std::string path = request.path();
-        if (path == "/")
-        {
-            path = "/index.html";
-        }
-
-        std::string file_path = "www" + path;
-        std::ifstream file(file_path);
+        
         HttpResponse response;
+        router_.route(request, response);
 
-        if (!file.is_open())
-        {
-            response.setStatus(404, "Not Found");
-            response.setBody("<h1>404 Not Found</h1>");
-        }
-        else
-        {
-            std::stringstream ss;
-            ss << file.rdbuf();
-            std::string body = ss.str();
-            response.setStatus(200, "OK");
-            response.setBody(body);
-        }
         //把客户端的意愿传给响应
         response.setKeepAlive(request.keepAlive());
         //进写缓冲，不急着发
         std::string response_data = response.toString();
         write_buffers_[fd] += response_data;
         keep_alive_[fd] = request.keepAlive();
+        if (!write_buffers_[fd].empty())
+        {
+            epoll_event ev{};
+            ev.events   = EPOLLOUT | EPOLLET;
+            ev.data.fd  = fd;
+            epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+        }
+    
     }
-    if (!write_buffers_[fd].empty())
-    {
-        epoll_event ev{};
-        ev.events   = EPOLLOUT | EPOLLET;
-        ev.data.fd  = fd;
-        epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
-    }    
-
 }
 
 void Server::handleWrite(int fd)

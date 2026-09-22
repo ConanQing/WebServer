@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>登录 — ConanWebServer</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --blue: #58a6ff;
+  --green: #3fb950;
+  --red: #f85149;
+  --purple: #bc8cff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 40px 32px;
+}
+h1 {
+  font-size: 24px;
+  text-align: center;
+  letter-spacing: .5px;
+  background: linear-gradient(90deg, var(--blue), var(--purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 6px;
+}
+.sub {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 28px;
+}
+.field { margin-bottom: 16px; }
+.field span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+input {
+  width: 100%;
+  padding: 11px 13px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+input:focus { outline: none; border-color: var(--blue); }
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border: none;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #0d1117;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+button:hover { opacity: .88; }
+button:disabled { opacity: .5; cursor: default; }
+#result {
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+  display: none;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+#result.ok { display: block; color: var(--green); border-color: rgba(63,185,80,.45); }
+#result.bad { display: block; color: var(--red); border-color: rgba(248,81,73,.45); }
+.foot {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.8;
+}
+.foot code {
+  font-family: ui-monospace, Consolas, monospace;
+  color: var(--blue);
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>ConanWebServer</h1>
+  <p class="sub">登录接口测试 · POST /login</p>
+
+  <div class="field">
+    <span>用户名</span>
+    <input id="username" value="conan" autocomplete="username">
+  </div>
+
+  <div class="field">
+    <span>密码</span>
+    <input id="password" type="password" value="123456" autocomplete="current-password">
+  </div>
+
+  <button id="btn" onclick="doLogin()">登录</button>
+
+  <div id="result"></div>
+
+  <div class="foot">
+    当前是写死的账号：<code>conan</code> / <code>123456</code><br>
+    改一下就成 401 了
+  </div>
+</div>
+
+<script>
+async function doLogin() {
+  const result = document.getElementById('result');
+  const btn = document.getElementById('btn');
+
+  result.className = '';
+  result.textContent = '请求中...';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+      })
+    });
+
+    const text = await resp.text();
+    result.textContent = 'HTTP ' + resp.status + ' ' + resp.statusText + '\n' + text;
+    result.className = resp.ok ? 'ok' : 'bad';
+
+  } catch (e) {
+    result.textContent = '请求失败：' + e;
+    result.className = 'bad';
+  }
+
+  btn.disabled = false;
+}
+
+document.getElementById('password').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { doLogin(); }
+});
+</script>
+
+</body>
+</html>

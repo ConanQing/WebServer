@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "Router.h"
+
 class Server
 {
 public:
@@ -31,6 +33,8 @@ private:
     std::unordered_map<int, std::string> buffers_;
     std::unordered_map<int, std::string> write_buffers_;
     std::unordered_map<int, bool> keep_alive_;
+
+    Router router_;
 };
 
 #endif

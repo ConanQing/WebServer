@@ -11,4 +11,5 @@ add_executable(server
     src/Server.cpp
     src/HttpRequest.cpp
     src/HttpResponse.cpp
+    src/Router.cpp
 )

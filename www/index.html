@@ -110,6 +110,20 @@ body {
   color: var(--blue); font-size: 13px;
 }
 
+.cta { margin-top: 30px; }
+.btn-primary {
+  display: inline-block;
+  padding: 12px 44px;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #0d1117;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity .15s;
+}
+.btn-primary:hover { opacity: .88; }
+
 footer {
   margin-top: 72px;
   padding: 28px 0;
@@ -126,6 +140,11 @@ footer {
   <h1>ConanWebServer</h1>
   <p>用 C++ 从零手写的高并发 HTTP 服务器</p>
   <div class="status"><span class="dot"></span>服务器运行中 · Linux · 端口 8080</div>
+
+  <div class="cta">
+    <a class="btn-primary" href="/login.html">登录</a>
+  </div>
+
   <div class="badges">
     <span class="badge">C++17</span>
     <span class="badge">epoll</span>
@@ -166,6 +185,7 @@ footer {
   <div class="section">
     <h2>试试这些</h2>
     <div class="links">
+      <a class="link" href="/login.html"><code>/login.html</code>&nbsp; 登录页</a>
       <a class="link" href="/hello.html"><code>/hello.html</code>&nbsp; 静态路由</a>
       <a class="link" href="/not-exist.html"><code>/not-exist.html</code>&nbsp; 404 兜底</a>
       <a class="link" href="/"><code>/</code>&nbsp; 回到首页</a>

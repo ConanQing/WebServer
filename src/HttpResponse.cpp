@@ -16,6 +16,11 @@ void HttpResponse::setKeepAlive(bool keep_alive)
     keep_alive_ = keep_alive;
 }
 
+void HttpResponse::setContentType(const std::string& type)
+{
+    content_type_ = type;
+}
+
 std::string HttpResponse::toString() const
 {
     std::string response;
@@ -26,7 +31,7 @@ std::string HttpResponse::toString() const
     response += status_;
     response += "\r\n";
 
-    response += "Content-Type: text/html\r\n";
+    response += "Content-Type: " + content_type_ + "\r\n";
 
     response += "Content-Length: ";
     response += std::to_string(body_.size());
