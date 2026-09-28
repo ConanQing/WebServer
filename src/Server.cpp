@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
@@ -23,7 +24,9 @@ Server::Server(int port)
     :
     port_(port),
     listen_fd_(-1),
-    epoll_fd_(-1)
+    epoll_fd_(-1),
+    event_fd_(-1),
+    pool_(4)
 {
 
 }
@@ -143,6 +146,25 @@ void Server::start()
         &event
     );
 
+    //创建 eventfd：worker 用它来唤醒主线程
+    event_fd_ = eventfd(0, EFD_NONBLOCK);
+
+    if (event_fd_ < 0)
+    {
+        perror("eventfd");
+        return;
+    }
+
+    epoll_event ev_wake{};
+    ev_wake.events  = EPOLLIN | EPOLLET;
+    ev_wake.data.fd = event_fd_;
+
+    epoll_ctl(
+        epoll_fd_,
+        EPOLL_CTL_ADD,
+        event_fd_,
+        &ev_wake
+    );
 
 
     std::cout
@@ -175,6 +197,10 @@ void Server::start()
             if(fd == listen_fd_)
             {
                 handleAccept();
+            }
+            else if(fd == event_fd_)
+            {
+                handleWakeup();
             }
             else if(events[i].events & EPOLLOUT)
             {
@@ -345,34 +371,95 @@ void Server::handleRead(int fd)
         //把这一段从缓冲区里删掉
         buffers_[fd].erase(0, request_length);
 
-        //解析请求
-        HttpRequest request;
-        if (!request.parse(full_request))
+        pool_.submit([this,fd,full_request]()
         {
-            close(fd);
-            buffers_.erase(fd);
-            return;
-        }
-        
-        HttpResponse response;
-        router_.route(request, response);
+            DoneItem item;
+            item.fd = fd;
 
-        //把客户端的意愿传给响应
-        response.setKeepAlive(request.keepAlive());
-        //进写缓冲，不急着发
-        std::string response_data = response.toString();
-        write_buffers_[fd] += response_data;
-        keep_alive_[fd] = request.keepAlive();
-        if (!write_buffers_[fd].empty())
-        {
-            epoll_event ev{};
-            ev.events   = EPOLLOUT | EPOLLET;
-            ev.data.fd  = fd;
-            epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
-        }
+            // 解析 + 拼响应（纯计算，不碰 IO）
+            HttpRequest request;
+
+            if (!request.parse(full_request))
+            {
+                // 请求非法 → 空响应，主线程收到后会关掉这条连接
+                item.response   = "";
+                item.keep_alive = false;
+            }
+            else
+            {
+                HttpResponse response;
+                router_.route(request, response);
+                response.setKeepAlive(request.keepAlive());
+
+                item.response   = response.toString();
+                item.keep_alive = request.keepAlive();
+            }
+
+            // 把成果放进队列，交回主线程
+            {
+                std::lock_guard<std::mutex> lock(done_mtx_);
+                done_queue_.push(item);
+            }
+
+            // 敲一下 eventfd，唤醒主线程
+            std::uint64_t one = 1;
+            ssize_t ret = write(event_fd_, &one, sizeof(one));
+            (void)ret;
+
+        });
     
     }
 }
+
+
+void Server::handleWakeup()
+{
+    // ① 排空 eventfd
+    std::uint64_t val;
+    while (read(event_fd_, &val, sizeof(val)) > 0)
+    {
+    }
+
+    // ② 整体搬出来（锁只持有这一瞬间）
+    std::queue<DoneItem> local;
+    {
+        std::lock_guard<std::mutex> lock(done_mtx_);
+        local.swap(done_queue_);
+    }
+
+    // ③ 循环处理全部
+    while (!local.empty())
+    {
+        DoneItem item = local.front();
+        local.pop();
+
+        int fd = item.fd;
+
+        if (buffers_.count(fd) == 0)// 连接已断，丢弃
+        {
+            continue;
+        }
+
+        if (item.response.empty())// 非法请求 → 关闭连接
+        {
+            epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, nullptr);
+            close(fd);
+            buffers_.erase(fd);
+            keep_alive_.erase(fd);
+            write_buffers_.erase(fd);
+            continue;
+        }
+
+        write_buffers_[fd] += item.response;// ★ += 不是 =
+        keep_alive_[fd] = item.keep_alive;  // ★ 别漏
+
+        epoll_event ev{};
+        ev.events  = EPOLLIN | EPOLLOUT | EPOLLET;
+        ev.data.fd = fd;
+        epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+    }
+}
+
 
 void Server::handleWrite(int fd)
 {
