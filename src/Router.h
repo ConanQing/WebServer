@@ -3,6 +3,8 @@
 
 #include "HttpRequest.h"
 #include "HttpResponse.h"
+#include "handlers/LoginHandler.h"
+#include "handlers/StaticHandler.h"
 
 class Router
 {
@@ -11,9 +13,8 @@ public:
     void route(const HttpRequest& request, HttpResponse& response);
 
 private:
-    void handleLogin(const HttpRequest& request, HttpResponse& response);
-
-    void handleStatic(const HttpRequest& request, HttpResponse& response);
+    LoginHandler login_;
+    StaticHandler staticFile_;  
 };
 
 #endif

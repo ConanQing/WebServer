@@ -14,6 +14,11 @@ add_executable(server
     src/HttpResponse.cpp
     src/Router.cpp
     src/ThreadPool.cpp
+    src/handlers/LoginHandler.cpp
+    src/handlers/StaticHandler.cpp
 )
+
+# 头文件在 src/ 下，告诉编译器也去那里找
+target_include_directories(server PRIVATE src)
 
 target_link_libraries(server PRIVATE Threads::Threads)
