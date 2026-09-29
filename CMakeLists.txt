@@ -9,6 +9,8 @@ find_package(Threads REQUIRED)
 
 add_executable(server
     src/main.cpp
+    src/Config.cpp
+    src/ConnectionPool.cpp
     src/Server.cpp
     src/HttpRequest.cpp
     src/HttpResponse.cpp
@@ -21,4 +23,5 @@ add_executable(server
 # 头文件在 src/ 下，告诉编译器也去那里找
 target_include_directories(server PRIVATE src)
 
-target_link_libraries(server PRIVATE Threads::Threads)
+# Threads = pthread；mysqlclient = MySQL 客户端库
+target_link_libraries(server PRIVATE Threads::Threads mysqlclient)

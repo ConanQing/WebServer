@@ -8,14 +8,14 @@
 
 #include "Router.h"
 #include "ThreadPool.h"
-
+#include "ConnectionPool.h"
 
 
 class Server
 {
 public:
 
-    Server(int port);
+    Server(int port,ConnectionPool& pool);
 
     void start();
 

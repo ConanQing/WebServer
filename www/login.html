@@ -118,16 +118,16 @@ button:disabled { opacity: .5; cursor: default; }
 
 <div class="card">
   <h1>ConanWebServer</h1>
-  <p class="sub">登录接口测试 · POST /login</p>
+  <p class="sub">账号校验 · POST /login · 后端查 MySQL</p>
 
   <div class="field">
     <span>用户名</span>
-    <input id="username" value="conan" autocomplete="username">
+    <input id="username" placeholder="请输入用户名" autocomplete="username">
   </div>
 
   <div class="field">
     <span>密码</span>
-    <input id="password" type="password" value="123456" autocomplete="current-password">
+    <input id="password" type="password" placeholder="请输入密码" autocomplete="current-password">
   </div>
 
   <button id="btn" onclick="doLogin()">登录</button>
@@ -135,8 +135,8 @@ button:disabled { opacity: .5; cursor: default; }
   <div id="result"></div>
 
   <div class="foot">
-    当前是写死的账号：<code>conan</code> / <code>123456</code><br>
-    改一下就成 401 了
+    账号密码由后端查 <code>MySQL</code> 校验<br>
+    错误会返回 <code>401</code>
   </div>
 </div>
 

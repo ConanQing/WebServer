@@ -3,12 +3,15 @@
 
 #include "HttpRequest.h"
 #include "HttpResponse.h"
+#include "ConnectionPool.h"
 #include "handlers/LoginHandler.h"
 #include "handlers/StaticHandler.h"
 
 class Router
 {
 public:
+    explicit Router(ConnectionPool& pool);
+    
     // 根据 (method, path) 分派，把结果填进 response
     void route(const HttpRequest& request, HttpResponse& response);
 

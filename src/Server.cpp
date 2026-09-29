@@ -20,11 +20,12 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-Server::Server(int port)
+Server::Server(int port,ConnectionPool& pool)
     :
     port_(port),
     listen_fd_(-1),
     epoll_fd_(-1),
+    router_(pool),
     event_fd_(-1),
     pool_(4)
 {
@@ -375,7 +376,6 @@ void Server::handleRead(int fd)
         {
             DoneItem item;
             item.fd = fd;
-
             // 解析 + 拼响应（纯计算，不碰 IO）
             HttpRequest request;
 
