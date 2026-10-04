@@ -50,6 +50,17 @@ MYSQL* ConnectionPool::get()
 
     MYSQL* conn = free_conns_.front();
     free_conns_.pop();
+
+    lock.unlock();          // ★ ping 和重连都是慢操作，先放锁
+
+    // ★ 体检：连接还活着吗？
+    //   （空闲超时 / MySQL 重启 / 被 KILL，都会让它悄悄失效）
+    if (mysql_ping(conn) != 0)
+    {
+        mysql_close(conn);              // 死了，作废
+        conn = createConnection();      // 重建一条（MySQL 挂了则返回 nullptr）
+    }
+
     return conn;
 }
 

@@ -70,6 +70,12 @@ void Server::start()
     }
 
 
+    // 允许【接管一个只残留 TIME-WAIT 的端口】，让服务器能立刻重启
+    // （必须放在 bind() 之前 —— 冲突检查发生在 bind 里）
+    int opt = 1;
+    setsockopt(listen_fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+
 
     sockaddr_in addr{};
 
