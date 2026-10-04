@@ -14,7 +14,15 @@ public:
 
 private:
     // 查库验证账号密码，对了返回 true
-    bool checkPassword(const std::string& username, const std::string& password);
+    // 查库验证账号密码的结果（三态：区分"用户的错"和"服务器的错"）
+    enum class LoginResult
+    {
+        Success,          // 密码正确
+        WrongPassword,    // 账号或密码错误
+        ServerError       // 查库出错（拿不到连接 / SQL 失败）
+    };
+
+    LoginResult checkPassword(const std::string& username, const std::string& password);
     
     ConnectionPool& pool_; 
 };
