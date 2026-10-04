@@ -25,6 +25,12 @@ using json = nlohmann::json;
 // 退出标志 + 信号处理器
 namespace {
 
+    // 单个请求的最大字节数（头部 + body）—— 防止恶意客户端发超长请求耗尽内存
+    const std::size_t MAX_REQUEST_SIZE = 64 * 1024;      // 64 KB
+
+    // 连接空闲多久就关掉（防 Slowloris：连上但不发完请求）
+    const int CONN_IDLE_TIMEOUT_SEC = 30;
+
     std::atomic<bool> g_running{true};
 
     void handleSignal(int)
@@ -205,17 +211,19 @@ void Server::start()
 
     epoll_event events[1024];
 
-
+    // 上次检查空闲连接的时间
+    auto last_check = std::chrono::steady_clock::now();
 
     while(g_running)
     {
 
+        // 用 1 秒超时（而不是 -1 永久阻塞）—— 这样才能定期检查空闲连接
         int n =
             epoll_wait(
                 epoll_fd_,
                 events,
                 1024,
-                -1
+                1000
             );
 
 
@@ -239,6 +247,14 @@ void Server::start()
             {
                 handleRead(fd);
             }
+        }
+
+        // 每 1 秒最多检查一次空闲连接
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - last_check).count() >= 1000)
+        {
+            checkTimeouts();
+            last_check = now;
         }
     }
 
@@ -285,6 +301,7 @@ void Server::handleAccept()
 
 
         buffers_[client_fd]="";
+        last_active_[client_fd] = std::chrono::steady_clock::now();
 
 
 
@@ -317,6 +334,8 @@ void Server::handleAccept()
 
 void Server::handleRead(int fd)
 {
+    last_active_[fd] = std::chrono::steady_clock::now();   // 刷新活动时间
+
     char buffer[4096];
     while(true)
     {
@@ -335,6 +354,23 @@ void Server::handleRead(int fd)
                 buffer,
                 n
             );
+
+            // 请求超过大小上限 -> 记日志并关闭连接
+            // （严格的实现应该回 413 Payload Too Large，这里从简：直接断）
+            if(buffers_[fd].size() > MAX_REQUEST_SIZE)
+            {
+                std::cerr
+                    << "[WARN] 请求超过大小上限("
+                    << MAX_REQUEST_SIZE
+                    << " 字节)，关闭连接 fd="
+                    << fd
+                    << std::endl;
+
+                epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, nullptr);
+                close(fd);
+                buffers_.erase(fd);
+                return;
+            }
         }
 
         else if(n == 0)
@@ -553,5 +589,40 @@ void Server::handleWrite(int fd)
             write_buffers_.erase(fd);
             keep_alive_.erase(fd);
         }
+    }
+}
+
+// ================= 空闲连接超时检查（防 Slowloris）=================
+void Server::checkTimeouts()
+{
+    auto now = std::chrono::steady_clock::now();
+
+    std::vector<int> expired;
+
+    for (const auto& pair : last_active_)
+    {
+        auto idle = std::chrono::duration_cast<std::chrono::seconds>(now - pair.second).count();
+
+        if (idle >= CONN_IDLE_TIMEOUT_SEC)
+        {
+            expired.push_back(pair.first);
+        }
+    }
+
+    for (int fd : expired)
+    {
+        std::cerr
+            << "[WARN] 连接空闲超时("
+            << CONN_IDLE_TIMEOUT_SEC
+            << " 秒)，关闭 fd="
+            << fd
+            << std::endl;
+
+        epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, nullptr);
+        close(fd);
+        buffers_.erase(fd);
+        keep_alive_.erase(fd);
+        write_buffers_.erase(fd);
+        last_active_.erase(fd);
     }
 }

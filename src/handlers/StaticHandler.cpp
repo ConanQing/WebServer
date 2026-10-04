@@ -12,6 +12,15 @@ void StaticHandler::handle(const HttpRequest& request, HttpResponse& response)
         path = "/index.html";
     }
 
+    // 防目录穿越：拒绝包含 ".." 的路径
+    // 否则 GET /../../etc/passwd 会被拼成 www/../../etc/passwd，读到系统文件
+    if (path.find("..") != std::string::npos)
+    {
+        response.setStatus(403, "Forbidden");
+        response.setBody("<h1>403 Forbidden</h1>");
+        return;
+    }
+
     std::string file_path = "www" + path;
     std::ifstream file(file_path);
 

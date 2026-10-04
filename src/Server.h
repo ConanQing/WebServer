@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <queue>
 #include <mutex>
+#include <chrono>
 
 #include "Router.h"
 #include "ThreadPool.h"
@@ -34,6 +35,9 @@ private:
     // 处理 eventfd 唤醒：把 worker 算好的响应发出去
     void handleWakeup();
 
+    // 关闭空闲超时的连接（防 Slowloris）
+    void checkTimeouts();
+
 
 private:
     int port_;
@@ -43,6 +47,9 @@ private:
     std::unordered_map<int, std::string> buffers_;
     std::unordered_map<int, std::string> write_buffers_;
     std::unordered_map<int, bool> keep_alive_;
+
+    // 每条连接最后一次活动的时间（用于空闲超时检查）
+    std::unordered_map<int, std::chrono::steady_clock::time_point> last_active_;
 
     struct DoneItem
     {
