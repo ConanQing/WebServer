@@ -75,7 +75,6 @@ LoginHandler::LoginResult
 LoginHandler::checkPassword(const std::string& username, const std::string& password)
 {
     const std::string cache_key = "user:" + username;
-    const std::string pass_hash = Crypto::sha256Hex(password);   // C++ 里算，缓存命中时也要用
 
     // ---------- ① 先查 Redis 缓存 ----------
     std::string cached;
@@ -87,8 +86,8 @@ LoginHandler::checkPassword(const std::string& username, const std::string& pass
             return LoginResult::WrongPassword;      // 之前查过：这个用户不存在
         }
 
-        return (cached == pass_hash) ? LoginResult::Success
-                                     : LoginResult::WrongPassword;
+        return Crypto::verifyPassword(password, cached) ? LoginResult::Success
+                                                       : LoginResult::WrongPassword;
     }
 
     // ⚠️ get() 返回 false 有两种可能：key 不存在 / Redis 故障 —— 都走查库
@@ -156,8 +155,8 @@ LoginHandler::checkPassword(const std::string& username, const std::string& pass
         int ttl = 300 + (rand() % 60);      // 300~360 秒，加抖动防【缓存雪崩】
         redis_.set(cache_key, stored, ttl); // 写失败不影响本次结果
 
-        return (stored == pass_hash) ? LoginResult::Success
-                                     : LoginResult::WrongPassword;
+        return Crypto::verifyPassword(password, stored) ? LoginResult::Success
+                                                       : LoginResult::WrongPassword;
     }
     else
     {
