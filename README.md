@@ -200,6 +200,28 @@ enum class LoginResult { Success, WrongPassword, ServerError };
 
 程序只读文件名、不认内容 —— **使用者填自己的配置即可连自己的数据库，代码零改动**。
 
+### 10. 信号处理：优雅停机 + SIGPIPE 防护
+
+**优雅停机**：注册 `SIGINT` / `SIGTERM`，处理器**只设一个 `std::atomic<bool>` 标志**（信号处理器里不能做复杂操作 —— 可能在主线程执行 `malloc` 中间打断它，导致死锁）。
+
+主循环 `while (g_running)` 退出后 `main` 正常返回，**析构链自动执行**：
+
+```
+ThreadPool::~ThreadPool    → stop_ + notify_all + join × 4（等 worker 干完手上的活）
+ConnectionPool::~ConnectionPool → mysql_close × 4（发 COM_QUIT 正式告别，而非 TCP 硬断）
+```
+
+> 验证：进程退出码从 **143**（= 128+15，被信号杀死）变为 **0**（正常退出）。
+
+**SIGPIPE 防护**：往已断开的 socket 写会触发 `SIGPIPE`，而**它的默认行为是杀死进程** —— 一个客户端的异常断开就能搞崩整个服务。双层防护：
+
+```cpp
+std::signal(SIGPIPE, SIG_IGN);                 // 全局（覆盖 write 等所有路径）
+send(fd, buf, len, MSG_NOSIGNAL);              // 单次调用（精确）
+```
+
+忽略之后，写失败只返回 `-1` + `errno`，走正常的错误处理流程。
+
 ---
 
 ## 项目结构
@@ -235,7 +257,6 @@ ConanWebServer/
 | **密码存储用 SHA-256 且未加盐** | 应升级为 PBKDF2 / bcrypt / Argon2 |
 | **路径穿越未防护** | `StaticHandler` 未校验 `..` |
 | **无连接超时 / 请求大小上限** | 理论上可被 Slowloris 类攻击拖垮 |
-| **无优雅停机** | `start()` 是 `while(true)`，收到信号直接终止，析构链不执行 |
 | **无日志系统** | 目前仅用 `cout` / `cerr` |
 | **单元测试缺失** | — |
 
@@ -245,7 +266,7 @@ ConanWebServer/
 
 - [ ] Redis 缓存层（Phase 8）
 - [ ] 日志系统（分级 + 异步落盘）
-- [ ] 优雅停机（信号处理 + 让析构链跑起来）
+- [x] ~~优雅停机（信号处理 + 让析构链跑起来）~~ ✅ 已完成
 - [ ] 连接超时 / 请求大小上限
 - [ ] PBKDF2 密码存储
 - [ ] 压测对比：单线程 vs 线程池 vs 多 Reactor

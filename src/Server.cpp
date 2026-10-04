@@ -7,6 +7,8 @@
 #include <cstring>
 #include <fstream>
 #include <sstream>
+#include <csignal>
+#include <atomic>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -19,6 +21,19 @@
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
+
+// 退出标志 + 信号处理器
+namespace {
+
+    std::atomic<bool> g_running{true};
+
+    void handleSignal(int)
+    {
+        g_running = false;      // 只做这一件事
+    }
+
+}
+
 
 Server::Server(int port,ConnectionPool& pool)
     :
@@ -179,13 +194,20 @@ void Server::start()
         << port_
         << std::endl;
 
+    // 注册信号处理器
+    std::signal(SIGINT,  handleSignal);     // Ctrl-C
+    std::signal(SIGTERM, handleSignal);     // kill / systemctl stop
+
+    // 忽略 SIGPIPE：往已断开的 socket 写时不杀进程，只返回错误码
+    std::signal(SIGPIPE, SIG_IGN);
+
 
 
     epoll_event events[1024];
 
 
 
-    while(true)
+    while(g_running)
     {
 
         int n =
@@ -219,6 +241,8 @@ void Server::start()
             }
         }
     }
+
+    std::cout << "[shutdown] 正在优雅退出..." << std::endl;
 }
 
 void Server::handleAccept()
@@ -477,7 +501,7 @@ void Server::handleWrite(int fd)
             fd,
             buffer.data(),
             buffer.size(),
-            0
+            MSG_NOSIGNAL
         );
 
         if (n > 0)
