@@ -3,7 +3,7 @@
 Router::Router(ConnectionPool& pool, RedisClient& redis)
     : login_(pool, redis)
 {
-    
+
 }
 void Router::route(const HttpRequest& request, HttpResponse& response)
 {

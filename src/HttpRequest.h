@@ -24,7 +24,7 @@ private:
     std::string body_;
 
     bool keep_alive_;
-    
+
     std::unordered_map<std::string, std::string> headers_;
 };
 

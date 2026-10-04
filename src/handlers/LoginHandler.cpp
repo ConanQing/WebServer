@@ -62,9 +62,8 @@ void LoginHandler::handle(const HttpRequest& request, HttpResponse& response)
 LoginHandler::LoginHandler(ConnectionPool& pool, RedisClient& redis)
     : pool_(pool), redis_(redis)
 {
-    
-}
 
+}
 
 // 缓存里存的「用户不存在」标记（防缓存穿透）
 namespace {

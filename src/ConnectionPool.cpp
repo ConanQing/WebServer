@@ -87,7 +87,6 @@ void ConnectionPool::release(MYSQL* conn)
     cv_.notify_one();
 }
 
-
 ConnectionPool::~ConnectionPool()
 {
     {

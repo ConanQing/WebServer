@@ -45,7 +45,7 @@ std::string HttpResponse::toString() const
     {
         response += "Connection: close\r\n";
     }
-    
+
     response += "\r\n";
 
     response += body_;

@@ -12,7 +12,6 @@
 #include "ConnectionPool.h"
 #include "RedisClient.h"
 
-
 class Server
 {
 public:
@@ -20,7 +19,6 @@ public:
     Server(int port, ConnectionPool& pool, RedisClient& redis);
 
     void start();
-
 
 private:
 
@@ -37,7 +35,6 @@ private:
 
     // 关闭空闲超时的连接（防 Slowloris）
     void checkTimeouts();
-
 
 private:
     int port_;

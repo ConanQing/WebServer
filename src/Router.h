@@ -12,13 +12,13 @@ class Router
 {
 public:
     explicit Router(ConnectionPool& pool, RedisClient& redis);
-    
+
     // 根据 (method, path) 分派，把结果填进 response
     void route(const HttpRequest& request, HttpResponse& response);
 
 private:
     LoginHandler login_;
-    StaticHandler staticFile_;  
+    StaticHandler staticFile_;
 };
 
 #endif

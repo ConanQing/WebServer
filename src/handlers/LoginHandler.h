@@ -24,9 +24,9 @@ private:
     };
 
     LoginResult checkPassword(const std::string& username, const std::string& password);
-    
+
     ConnectionPool& pool_;
-    RedisClient&    redis_; 
+    RedisClient&    redis_;
 };
 
 #endif

@@ -97,7 +97,7 @@ bool HttpRequest::parse(const std::string& request)
                 body_ = request.substr(body_start,length);
             }
         }
-    }    
+    }
 
     // 根据 Connection Header 判断是否保持连接
     auto it = headers_.find("Connection");

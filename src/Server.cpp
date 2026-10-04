@@ -40,7 +40,6 @@ namespace {
 
 }
 
-
 Server::Server(int port, ConnectionPool& pool, RedisClient& redis)
     :
     port_(port),
@@ -53,8 +52,6 @@ Server::Server(int port, ConnectionPool& pool, RedisClient& redis)
 
 }
 
-
-
 void Server::setNonBlocking(int fd)
 {
     int flags = fcntl(
@@ -63,16 +60,12 @@ void Server::setNonBlocking(int fd)
         0
     );
 
-
     fcntl(
         fd,
         F_SETFL,
         flags | O_NONBLOCK
     );
 }
-
-
-
 
 void Server::start()
 {
@@ -83,23 +76,18 @@ void Server::start()
         0
     );
 
-
     if(listen_fd_ == -1)
     {
         perror("socket");
         return;
     }
 
-
     // 允许【接管一个只残留 TIME-WAIT 的端口】，让服务器能立刻重启
     // （必须放在 bind() 之前 —— 冲突检查发生在 bind 里）
     int opt = 1;
     setsockopt(listen_fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-
-
     sockaddr_in addr{};
-
 
     addr.sin_family = AF_INET;
 
@@ -108,8 +96,6 @@ void Server::start()
 
     addr.sin_port =
         htons(port_);
-
-
 
     // bind
 
@@ -123,9 +109,6 @@ void Server::start()
         return;
     }
 
-
-
-
     // listen
 
     if(listen(
@@ -137,35 +120,24 @@ void Server::start()
         return;
     }
 
-
-
     // 非阻塞
 
     setNonBlocking(
         listen_fd_
     );
 
-
-
     // epoll
-
 
     epoll_fd_ =
         epoll_create1(0);
 
-
-
     epoll_event event{};
-
 
     event.events =
         EPOLLIN | EPOLLET;
 
-
     event.data.fd =
         listen_fd_;
-
-
 
     epoll_ctl(
         epoll_fd_,
@@ -194,7 +166,6 @@ void Server::start()
         &ev_wake
     );
 
-
     std::cout
         << "server start: "
         << port_
@@ -206,8 +177,6 @@ void Server::start()
 
     // 忽略 SIGPIPE：往已断开的 socket 写时不杀进程，只返回错误码
     std::signal(SIGPIPE, SIG_IGN);
-
-
 
     epoll_event events[1024];
 
@@ -225,8 +194,6 @@ void Server::start()
                 1024,
                 1000
             );
-
-
 
         for(int i = 0; i < n; i++)
         {
@@ -298,24 +265,16 @@ void Server::handleAccept()
             client_fd
         );
 
-
-
         buffers_[client_fd]="";
         last_active_[client_fd] = std::chrono::steady_clock::now();
 
-
-
         epoll_event event{};
-
 
         event.events =
             EPOLLIN | EPOLLET;
 
-
         event.data.fd =
             client_fd;
-
-
 
         epoll_ctl(
             epoll_fd_,
@@ -386,7 +345,6 @@ void Server::handleRead(int fd)
             {
                 break;
             }
-
 
             close(fd);
 
@@ -473,10 +431,9 @@ void Server::handleRead(int fd)
             (void)ret;
 
         });
-    
+
     }
 }
-
 
 void Server::handleWakeup()
 {
@@ -525,7 +482,6 @@ void Server::handleWakeup()
         epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
     }
 }
-
 
 void Server::handleWrite(int fd)
 {
