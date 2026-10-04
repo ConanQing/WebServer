@@ -9,13 +9,14 @@
 #include "Router.h"
 #include "ThreadPool.h"
 #include "ConnectionPool.h"
+#include "RedisClient.h"
 
 
 class Server
 {
 public:
 
-    Server(int port,ConnectionPool& pool);
+    Server(int port, ConnectionPool& pool, RedisClient& redis);
 
     void start();
 

@@ -35,12 +35,12 @@ namespace {
 }
 
 
-Server::Server(int port,ConnectionPool& pool)
+Server::Server(int port, ConnectionPool& pool, RedisClient& redis)
     :
     port_(port),
     listen_fd_(-1),
     epoll_fd_(-1),
-    router_(pool),
+    router_(pool, redis),
     event_fd_(-1),
     pool_(4)
 {

@@ -35,5 +35,11 @@ bool loadConfig(const std::string& path, Config& out)
     out.db.port     = db.value("port", 3306);
     out.db.poolSize = db.value("pool_size", 4);
 
+    json rds = j.value("redis", json::object());
+
+    out.redis.host     = rds.value("host", "localhost");
+    out.redis.port     = rds.value("port", 6379);
+    out.redis.poolSize = rds.value("pool_size", 4);
+
     return true;
 }

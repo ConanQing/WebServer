@@ -4,11 +4,12 @@
 #include "HttpRequest.h"
 #include "HttpResponse.h"
 #include "ConnectionPool.h"
+#include "RedisClient.h"
 
 class LoginHandler{
 
 public:
-    explicit LoginHandler(ConnectionPool& pool);
+    explicit LoginHandler(ConnectionPool& pool, RedisClient& redis);
 
     void handle(const HttpRequest& request, HttpResponse& response);
 
@@ -24,7 +25,8 @@ private:
 
     LoginResult checkPassword(const std::string& username, const std::string& password);
     
-    ConnectionPool& pool_; 
+    ConnectionPool& pool_;
+    RedisClient&    redis_; 
 };
 
 #endif

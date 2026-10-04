@@ -10,7 +10,9 @@ find_package(Threads REQUIRED)
 add_executable(server
     src/main.cpp
     src/Config.cpp
+    src/Crypto.cpp
     src/ConnectionPool.cpp
+    src/RedisClient.cpp
     src/Server.cpp
     src/HttpRequest.cpp
     src/HttpResponse.cpp
@@ -24,4 +26,4 @@ add_executable(server
 target_include_directories(server PRIVATE src)
 
 # Threads = pthread；mysqlclient = MySQL 客户端库
-target_link_libraries(server PRIVATE Threads::Threads mysqlclient)
+target_link_libraries(server PRIVATE Threads::Threads mysqlclient hiredis crypto)

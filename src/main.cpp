@@ -1,5 +1,6 @@
 #include "Server.h"
 #include "ConnectionPool.h"
+#include "RedisClient.h"
 #include "Config.h"
 
 #include <iostream>
@@ -20,7 +21,10 @@ int main()
     ConnectionPool conn_pool(cfg.db.host, cfg.db.user, cfg.db.password,
                              cfg.db.database, cfg.db.port, cfg.db.poolSize);
 
-    Server server(cfg.server.port, conn_pool);
+    // 同样必须声明在 server 之前（后声明先析构）
+    RedisClient redis(cfg.redis.host, cfg.redis.port, cfg.redis.poolSize);
+
+    Server server(cfg.server.port, conn_pool, redis);
 
     server.start();
 

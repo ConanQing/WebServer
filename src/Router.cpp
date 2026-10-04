@@ -1,6 +1,7 @@
 #include "Router.h"
 
-Router::Router(ConnectionPool& pool) : login_(pool)
+Router::Router(ConnectionPool& pool, RedisClient& redis)
+    : login_(pool, redis)
 {
     
 }

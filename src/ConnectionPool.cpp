@@ -1,5 +1,8 @@
 #include "ConnectionPool.h"
 
+#include <iostream>
+#include <chrono>
+
 ConnectionPool::ConnectionPool(const std::string& host, const std::string& user,
                                const std::string& password, const std::string& database,
                                int port, std::size_t size)
@@ -39,9 +42,14 @@ MYSQL* ConnectionPool::get()
 {
     std::unique_lock<std::mutex> lock(mtx_);
 
-    cv_.wait(lock, [this] {
-        return stop_ || !free_conns_.empty();
-    });
+    // 带超时（原因同 RedisClient：池枯竭时不能无限等）
+    if (!cv_.wait_for(lock, std::chrono::milliseconds(100), [this] {
+            return stop_ || !free_conns_.empty();
+        }))
+    {
+        std::cerr << "[WARN] MySQL 连接池为空，返回失败" << std::endl;
+        return nullptr;
+    }
 
     if (stop_)
     {
